@@ -1,26 +1,27 @@
-require('dotenv').config();
-const express = require('express');
-const http = require('http');
-const socketIo = require('socket.io');
-const cors = require('cors');
-const { setupSocketHandlers } = require('./socket/Sockethandler');
+import dotenv from "dotenv";
+dotenv.config()
+import express, { json } from 'express';
+import {createServer} from 'http';
+import {Server} from 'socket.io';
+import cors from 'cors';
+import {setupSocketHandlers from './socket/SocketHandler.js';
 
-const app = express();
+const app=express();
 app.use(cors());
-app.use(express.json());
+app.use(json());
 
-const server = http.createServer(app);
+const server=createServer(app);
 
-const io = socketIo(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
+const io=new Server(server,{
+  cors:{
+    origin:'*',
+    methods:["GET","POST"]
   }
-});
+})
 
 setupSocketHandlers(io);
 
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
+const PORT=process.env.PORT || 5000;
+server.listen(PORT,()=>{
   console.log(`Server running on port ${PORT}`);
 });
