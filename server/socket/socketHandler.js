@@ -54,3 +54,25 @@ export function setupSocketHandlers(io) {
       
       socket.data.roomId = roomId;
     });
+
+    //handling game start from here
+      socket.on('startGame',()=> {
+      const roomId= socket.data.roomId;
+      if(!roomId || !rooms[roomId]) return;
+      
+      const room =rooms[roomId];
+      
+      // if our socket is the host of the room
+      const player= room.players.find(p=> p.id=== socket.id);
+      if(!player || !player.isHost) return;
+      
+      // starting the game with setting the current round to 1
+      room.gameStarted= true;
+      room.currentRound= 1;
+      
+      // startg the first round and first turn, will implement this function further
+      startTurn(io,roomId,rooms);
+      
+      // players in room get notified about the beginning of game
+      io.to(roomId).emit('gameStarted',{ currentRound: room.currentRound });
+    });
