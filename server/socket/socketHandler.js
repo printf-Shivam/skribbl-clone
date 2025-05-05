@@ -1,6 +1,8 @@
 import Room from '../models/Room.js';
 import {getRandomWord } from '../utils/wordGenerator.js';
 import {MAX_PLAYERS, ROUND_TIME } from '../config.js';
+import {startTurn} from './gameController.js';
+
 
 // game state
 const rooms = {};
