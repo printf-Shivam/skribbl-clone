@@ -39,3 +39,24 @@ export function startTurn(io,roomId,rooms){
   //update oother players with new drawing status
   io.to(roomId).emit('updatePlayers',room.players);
 }
+export function startRoundTimer(io, roomId, rooms){
+  const room = rooms[roomId];
+  if(!room) return ;
+  let timeLeft=ROUND_TIME;
+
+  //clear existing timer
+  clearInterval(room.timer);
+
+  //set timer for the room
+  room.timer =setInterval(()=>{
+    timeLeft--;
+  
+  //updating time and sending to all players
+  io.to(roomId).emit('timeUpdate',{timeLeft});
+
+  //ending round if the time is up
+  if(timeLeft <=0){
+  endRound(io,roomId,rooms); //we will implement this function later 
+  }
+  },1000);
+}
