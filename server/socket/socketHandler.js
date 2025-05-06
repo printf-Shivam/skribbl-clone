@@ -78,3 +78,41 @@ export function setupSocketHandlers(io) {
       // players in room get notified about the beginning of game
       io.to(roomId).emit('gameStarted',{ currentRound: room.currentRound });
     });
+
+      //handling word selection by drawer, we will take the selected word from frontend and handle accordingly
+      socket.on('selectWord',(selectedWord)=>{
+      const roomId=socket.data.roomId;
+      if(!roomId|| !rooms[roomId]) return;
+      
+      const room=rooms[roomId];
+      
+      if(room.currentDrawer=== socket.id) {
+        room.currentWord= selectedWord;
+        room.guessedPlayers= [];
+        
+        //let others know the word was selected 
+        io.to(roomId).emit('wordSelected',{ 
+          length:selectedWord.length,
+          drawer:socket.id 
+        });
+        
+        //sending word to the drawer
+        socket.emit('wordToDraw',selectedWord);
+        
+        //starting timer 
+        startRoundTimer(io,roomId,rooms);
+      }
+    });
+
+        //handling drawing by current drawer
+      socket.on('draw',(data) => {
+      const roomId=socket.data.roomId;
+      if(!roomId|| !rooms[roomId]) return;
+      
+      const room= rooms[roomId];
+      const player= room.players.find(p=>p.id=== socket.id);
+      
+      if(player&& player.isDrawing) {
+        socket.to(roomId).emit('drawing',data);
+      }
+    });
