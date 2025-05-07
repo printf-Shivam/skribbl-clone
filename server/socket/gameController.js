@@ -79,7 +79,7 @@ export function endRound(io, roomId, rooms){
   });
   
 //check if the game is over 
-  if(room.currentRound >= room.totalRounds* room.players.length) {
+  if(room.currentRound >= room.totalRounds * room.players.length) {
     // Game over
     setTimeout(()=>{
       io.to(roomId).emit('gameOver',{
