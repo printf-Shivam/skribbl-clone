@@ -116,3 +116,74 @@ export function setupSocketHandlers(io) {
         socket.to(roomId).emit('drawing',data);
       }
     });
+
+    //messaging feature 
+      socket.on('sendMessage',({message})=>{
+      const roomId= socket.data.roomId;
+      if(!roomId || !rooms[roomId]) return;
+      
+      const room= rooms[roomId];
+      const player= room.players.find(p=> p.id=== socket.id);
+      
+      if(!player) return;
+      
+      // checking if the socket is drawer
+      if (player.isDrawing) {
+        socket.emit('cannotGuess');
+        return;
+      }
+      
+      // if player guessed the word
+      if(room.guessedPlayers.includes(socket.id)) {
+        // if yes send as normal message
+        io.to(roomId).emit('newMessage',{
+          sender:player.username,
+          message,
+          isCorrectGuess:false
+        });
+        return;
+      }
+      
+      // if message is correct word
+      if (room.currentWord && message.toLowerCase().trim()=== room.currentWord.toLowerCase()) {
+        // guess is correct
+        room.guessedPlayers.push(socket.id);
+        
+        // calculation of score based on speed of guess
+        const timeLeft= getRoundTimeLeft(roomId, rooms);
+        const score= Math.ceil(timeLeft/ROUND_TIME*500)+ 100;
+        
+        player.score+= score;
+        
+        //let others know that a correct guess was made by current player
+        io.to(roomId).emit('correctGuess',{
+          playerId:socket.id,
+          playerName:player.username
+        });
+        
+        //let people know of their scores
+        socket.emit('scoreUpdate',{score:player.score});
+        
+        // update players list with new scores
+        io.to(roomId).emit('updatePlayers',room.players);
+        
+        // Award points to drawer as well
+        const drawer= room.players.find(p=>p.id=== room.currentDrawer);
+        if(drawer) {
+          drawer.score+= 50;
+          io.to(roomId).emit('updatePlayers',room.players);
+        }
+        
+        // checking if everyone has guessed the word
+        if (room.guessedPlayers.length>= room.players.length-1) {
+          endRound(io, roomId, rooms);
+        }
+      } else {
+        // normal message
+        io.to(roomId).emit('newMessage',{
+          sender:player.username,
+          message,
+          isCorrectGuess:false
+        });
+      }
+    });
