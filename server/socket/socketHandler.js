@@ -186,4 +186,19 @@ export function setupSocketHandlers(io) {
           isCorrectGuess:false
         });
       }
+        // clearing canvas
+        socket.on('clearCanvas',()=>{
+      const roomId= socket.data.roomId;
+      if(!roomId|| !rooms[roomId])return;
+      
+      const room= rooms[roomId];
+      
+      if (room.currentDrawer=== socket.id) {
+        socket.to(roomId).emit('canvasCleared');
+      }
     });
+
+     //if a player disconnects from game, handle it
+        
+    });
+  }
