@@ -199,6 +199,42 @@ export function setupSocketHandlers(io) {
     });
 
      //if a player disconnects from game, handle it
+      socket.on('disconnect',()=>{
+      console.log(`User disconnected:${socket.id}`);
+      
+      const roomId= socket.data.roomId;
+      if(!roomId|| !rooms[roomId]) return;
+      
+      const room= rooms[roomId];
+      
+      // removing player from room
+      const playerIndex= room.players.findIndex(p=>p.id=== socket.id);
+      if (playerIndex!== -1) {
+        const player= room.players[playerIndex];
+        room.players.splice(playerIndex, 1);
         
+        // notify others that the player left
+        io.to(roomId).emit('playerLeft',{id:socket.id, username:player.username});
+        io.to(roomId).emit('updatePlayers',room.players);
+        
+        // if current drawer disconnects, end the curernt round
+        if (room.currentDrawer=== socket.id) {
+          endRound(io,roomId,rooms);
+        }
+        
+        // assigning new host if current host disconnects
+        if (player.isHost && room.players.length> 0) {
+          room.players[0].isHost= true;
+          io.to(roomId).emit('newHost',{id:room.players[0].id});
+          io.to(roomId).emit('updatePlayers',room.players);
+        }
+        
+        //if any room is left empty, delete it
+        if (room.players.length===0) {
+          clearInterval(room.timer);
+          delete rooms[roomId];
+        }
+      }
+    });
     });
   }
